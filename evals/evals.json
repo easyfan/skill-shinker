@@ -1,0 +1,23 @@
+{
+  "skill_name": "skill-shrink",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "media-editorial 这个 skill 太大了，帮我 shrink 一下，文件在 ~/.claude/skills/media-editorial/SKILL.md",
+      "expected_output": "执行完整压缩流程（>500 行路径）：输出分析摘要（A/B/C 分类）、创建 scripts/ 目录（至少 1 个 .sh 文件）、创建或更新 DESIGN.md、SKILL.md 压缩到 ≤220 行，最终输出行数统计",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "character-training 的 SKILL.md 有点长，看看能不能缩一缩？路径是 ~/.claude/skills/character-training/SKILL.md",
+      "expected_output": "Proposal 模式（200-500 行路径）：输出结构化 Proposal，列出可提取内容和目标行数，**不直接修改文件**，等待用户确认",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "gh-review 这个 skill 感觉有点臃肿，帮我 shrink 一下，~/.claude/skills/gh-review/SKILL.md",
+      "expected_output": "拒绝执行（<200 行）：告知用户该文件只有 192 行，无需压缩，结束",
+      "files": []
+    }
+  ]
+}

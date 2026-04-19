@@ -4,19 +4,35 @@ Shrink bloated Claude Code skill/agent/command files into a clean three-layer st
 
 ## What it does
 
-Analyzes a target SKILL.md (or command/agent .md) and compresses it to ≤220 lines by:
+Analyzes a target SKILL.md (or command/agent .md) and compresses it using a four-class
+extraction system (ABCD), with two target tracks depending on skill complexity:
 
-- Extracting bash logic → `scripts/` (each script independently testable)
-- Moving design notes, derivations, background → `DESIGN.md` (not loaded into context)
-- Keeping only orchestration instructions in SKILL.md
+**ABCD extraction classes:**
 
-Three operating modes based on file size:
+| Class | Destination | Criteria |
+|-------|-------------|----------|
+| A | stays in SKILL.md | orchestration logic, flow steps, branch decisions |
+| B | `scripts/` | bash blocks >3 lines, callable standalone |
+| C | `manifest-schema.json` | cross-phase shared parameters consumed by >1 Phase |
+| D | `DESIGN.md` | design rationale, derivations, background (not loaded into context) |
+
+**Two target tracks:**
+
+| Track | Target | When |
+|-------|--------|------|
+| Option A — Stable | SKILL.md ≤ 220 lines | single-phase or stable skill |
+| Option B — Growth | SKILL.md ≤ 80 lines (pure coordinator) | ≥3 Phases, growing complexity |
+
+Option B is **Proposal-only**: skill-shrinker outputs the agent decomposition plan and
+directory structure; the actual split is performed manually.
+
+**Three operating modes based on file size:**
 
 | Lines | Action |
 |-------|--------|
 | < 200 | Inform user: no compression needed |
-| 200–500 | Output a **Proposal** (what to extract, estimated result) — does not modify files |
-| > 500 | Execute full shrink automatically |
+| 200–500 | Output a **Proposal** (ABCD classification + estimated result) — does not modify files |
+| > 500 | Full analysis, user confirms A or B track, then executes |
 
 ## Used by skill-review
 
@@ -77,16 +93,55 @@ skill-review will also guide you here automatically when a target file exceeds 4
 
 ## Output structure
 
+**Option A (Stable):**
+
 ```
 my-skill/
-├── SKILL.md        ← ≤220 lines, orchestration only
-├── scripts/        ← extracted bash (each callable standalone)
-│   ├── init_something.sh
-│   └── check_format.sh
-└── DESIGN.md       ← design notes, derivations, background
+├── SKILL.md              ← ≤220 lines, orchestration only
+├── manifest-schema.json  ← cross-phase shared parameters (written once by init phase)
+├── scripts/              ← extracted bash (each callable standalone)
+│   └── init_something.sh
+└── DESIGN.md             ← design notes, derivations, background
 ```
 
+**Option B (Growth, Proposal-only):**
+
+```
+my-skill/
+├── SKILL.md              ← ≤80 lines, pure coordinator
+├── manifest-schema.json  ← cross-phase shared parameters
+├── agents/               ← one file per Phase
+│   ├── phase-0-init.md
+│   └── phase-1-xxx.md
+└── DESIGN.md
+```
+
+## Evals
+
+The `evals/evals.json` file contains 5 test cases covering the key decision paths:
+
+| ID | Scenario | Expected behavior |
+|----|----------|-------------------|
+| 1 | Large skill (>500 lines, multi-phase) | ABCD analysis + Option B recommendation when Phase ≥ 3 |
+| 2 | Medium skill (200–500 lines) | Proposal mode: ABCD classification, await y/n/B confirmation |
+| 3 | Small skill (<200 lines) | Reject: inform user no compression needed |
+| 4 | Growth-type skill (4 Phases) | Option B Proposal-only: agent decomposition plan + manifest schema |
+| 5 | C vs D boundary (LUFS target + derivation) | LUFS → C class (manifest); derivation formula → D class (DESIGN.md) |
+
 ## Changelog
+
+### v0.3.0 (2026-04-20)
+
+Major design revision — ABCD four-class extraction system + dual-track Option A/B:
+
+| Item | Change |
+|------|--------|
+| Classification | ABC three-class → ABCD four-class; C split into C (manifest) and D (DESIGN.md) |
+| Manifest | New `manifest-schema.json` for cross-phase shared parameters; prevents context drift |
+| Option B | Growth track: Phase agent decomposition (Proposal-only), SKILL.md ≤ 80 lines |
+| Decision tree | Two-step C vs D tree with boundary case table |
+| Error handling | File existence check, invalid input handling, syntax check failure warning |
+| Evals | 5 test cases covering all decision paths |
 
 ### v0.2.0 (2026-04-14)
 

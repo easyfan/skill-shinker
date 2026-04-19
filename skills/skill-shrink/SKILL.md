@@ -11,7 +11,7 @@ allowed-tools: ["Bash", "Read", "Write", "Edit", "Glob", "Grep"]
 ```
 skill-name/
 ├── SKILL.md                ← 协调者执行指令（Option A ≤ 220 行；Option B ≤ 80 行）
-├── manifest-schema.json    ← 跨 Phase 共享参数（C2 类），init phase 写，后续只读
+├── manifest-schema.json    ← 跨 Phase 共享参数（C 类），init phase 写，后续只读
 ├── agents/                 ← 各 Phase agent 文件（Option B 专用）
 ├── scripts/                ← bash 实现细节（B 类）
 └── DESIGN.md               ← 设计背景与推导（D 类，不被执行上下文加载）
@@ -21,9 +21,11 @@ skill-name/
 
 ## Step 0：测量与分级
 
-首先确定目标文件路径：从用户消息或 `$ARGUMENTS` 中提取，赋给 `$TARGET_FILE`；`TARGET_DIR=$(dirname "$TARGET_FILE")`。若用户未指定，询问后继续。
+首先确定目标文件路径：优先从 `$ARGUMENTS` 取；若为空，从用户消息中识别路径，赋给 `$TARGET_FILE`。若无法确定，询问后继续。
 
 ```bash
+[ -f "$TARGET_FILE" ] || { echo "文件不存在: $TARGET_FILE"; exit 1; }
+TARGET_DIR=$(dirname "$TARGET_FILE")
 wc -l "$TARGET_FILE"
 ```
 
@@ -41,15 +43,15 @@ wc -l "$TARGET_FILE"
 
 ```
 📋 Shrink Proposal for <文件名>（当前 <N> 行）
-可提取到 scripts/（B 类）：  - scripts/init_scratch.sh  （第 45-83 行，~39 行）
-可物化到 manifest（C2 类）：  - 字体路径、LUFS 目标、像素参数  （第 XX-YY 行，~N 行）
-可移入 DESIGN.md（D 类）：  - §阈值推导  （第 200-220 行，~20 行）
+可提取到 scripts/（B 类）：  - scripts/init_scratch.sh（第 45-83 行，~39 行）
+可物化到 manifest（C 类）：  - 字段列表：<list>（第 XX-YY 行，~N 行）
+可移入 DESIGN.md（D 类）：  - §阈值推导（第 200-220 行，~20 行）
 SKILL.md 预计压缩后：~<n> 行
-<若 M ≥ 3>：另有 Option B（agent 化），输入 B 查看。
-执行此方案？(y/n/B)  [n = 保持现状，结束]
+<若 M ≥ 3>：另有 Option B（agent 化），输入 B 生成 agent 化方案（Proposal-only）。
+执行此方案？(y/n/B)  [n = 保持现状，结束；其他输入重新询问]
 ```
 
-等待用户确认后执行（选 B 则跳转 Step 4b 输出 Proposal-only）。
+y → 执行 Step 1–4a（Option A 流程，已分类内容直接使用，无需重走 Step 0c）；选 B → 跳转 Step 4b。
 
 ---
 
@@ -63,8 +65,8 @@ SKILL.md 预计压缩后：~<n> 行
 **B 类（→ scripts/）：bash 实现细节**
 - 超过 3 行的 bash 代码块，且移出后 SKILL.md 只需单行调用替代
 
-**C2 类（→ manifest-schema.json）：跨 Phase 共享参数**
-→ 使用「C2 vs D 判断决策树」逐项裁定
+**C 类（→ manifest-schema.json）：跨 Phase 共享参数**
+→ 使用「C vs D 判断决策树」逐项裁定
 
 统计 Phase 数量 M：识别以 `## Phase` 或 `## Step` 开头的独立执行阶段（不含分析/验证步骤）标题，计总数赋给 `M`。
 
@@ -76,40 +78,39 @@ SKILL.md 预计压缩后：~<n> 行
 目标文件：<path>  当前行数：<N>
 A 类（保留）：~<n> 行
 B 类（bash 提取）：~<n> 行，建议脚本：<list>
-C2 类（manifest 物化）：~<n> 行，建议字段：<list>
+C 类（manifest 物化）：~<n> 行，建议字段：<list>
 D 类（设计文档）：~<n> 行
 检测到 Phase 数量：<M>
 预计 SKILL.md 压缩后：~<n> 行
 
-<若 M ≥ 3>：
-检测到 <M> 个独立 Phase，推荐 Option B（agent 化）。
 请选择：
   A — 稳定型（ABCD 提取，SKILL.md ≤ 220 行）
-  B — 成长型（Phase agent 化 + manifest，Proposal-only）
+  B — 成长型（Phase agent 化 + manifest，Proposal-only）[M ≥ 3 时推荐]
+  N — 取消，保持现状
 ```
 
-等待用户选择 A/B 及脚本命名，再继续。
+等待用户选择 A/B/N；其他输入重新询问（超过 1 次视为 N）。选 A 后询问脚本命名（或使用默认：动词_对象.sh）。
 
 ---
 
-## C2 vs D 判断决策树
+## C vs D 判断决策树
 
 **步骤一**：该内容是否包含具体值（数字 / 路径 / 枚举 / schema）？
 - 否 → **D 类**
 - 是 → 步骤二
 
 **步骤二**：该值是否在超过一个 Phase/Step 中被直接消费且必须完全一致？
-- 否 → **D 类**；是 → **C2 类**（禁止移入 DESIGN.md）
+- 否 → **D 类**；是 → **C 类**（禁止移入 DESIGN.md）
 
-**边界案例对照表**：
+**边界案例对照表**（注：此表适用于 C vs D 裁定阶段；B 类判断独立进行）：
 
 | 内容示例 | 类别 | 理由 |
 |---------|------|------|
-| LUFS 目标 = -14，Phase 2 和 Phase 4 均用 | C2 | 含具体值 + 多 Phase 消费 |
-| 字体路径 `/System/.../Yuanti.ttc`，Phase 1/3 均用 | C2 | 含路径 + 多 Phase 消费 |
+| LUFS 目标 = -14，Phase 2 和 Phase 4 均用 | C | 含具体值 + 多 Phase 消费 |
+| 字体路径 `/System/.../Yuanti.ttc`，Phase 1/3 均用 | C | 含路径 + 多 Phase 消费 |
 | 220 行阈值的推导公式 | D | 含数字但无执行链依赖 |
 | 架构选型对比（为何不用 YAML） | D | 无具体执行值 |
-| Phase 1 内部专用变量（bash 计算中间值） | B | 单 Phase 使用，不需物化；若为执行逻辑参数（无 bash 实现），归 A |
+| Phase 1 内部专用变量（bash 计算中间值） | B | 单 Phase 使用，不走 C vs D 树，归 B/A |
 
 ---
 
@@ -123,11 +124,11 @@ D 类（设计文档）：~<n> 行
 
 ---
 
-## Step 2（Option A）：物化 C2 类 + 提取 D 类
+## Step 2（Option A）：物化 C 类 + 提取 D 类
 
-### Step 2a：C2 → manifest-schema.json
+### Step 2a：C → manifest-schema.json
 
-将 C2 类内容写入 `$TARGET_DIR/manifest-schema.json`：
+将 C 类内容写入 `$TARGET_DIR/manifest-schema.json`：
 - 根层级为 dict；数组仅用于有序序列
 - 由 init phase 一次性写入；后续每个 Phase 头部显式 Read 该文件，**禁止**推理 Phase 覆写
 - SKILL.md 中对应位置替换为：`# 共享参数见 manifest-schema.json`
@@ -168,9 +169,11 @@ for f in "$TARGET_DIR/scripts/"*.sh; do
 done
 ```
 
+若任意脚本语法错误，提示：「已生成文件保留在 scripts/，请手动修复后再调用 skill-shrink 验证。不自动回滚。」
+
 输出最终统计：SKILL.md、scripts/、manifest-schema.json、DESIGN.md 各项行数与压缩率。
 
-若 SKILL.md 仍 > 220 行，检查遗漏的 B/C2/D 类内容，重复 Step 1-2，最多重试 2 次。若重试后仍 > 220 行，说明剩余内容均为 A 类，无法进一步压缩。
+若 SKILL.md 仍 > 220 行，检查遗漏的 B/C/D 类内容，重复 Step 1-2-3，最多重试 2 次。若重试后仍 > 220 行，说明剩余内容均为 A 类，无法进一步压缩。
 
 ---
 
@@ -184,7 +187,7 @@ done
 建议目录结构：
   skill-name/
   ├── SKILL.md              ← 协调者，~<n> 行（仅含 Phase 调度顺序）
-  ├── manifest-schema.json  ← 共享参数：<C2 字段列表>
+  ├── manifest-schema.json  ← 共享参数：<C 字段列表>
   ├── agents/
   │   ├── phase-0-init.md   ← 读规范文件→写 manifest，~<n> 行
   │   ├── phase-1-xxx.md    ← 读 manifest，规则 inline 嵌入，~<n> 行
@@ -207,7 +210,7 @@ done
 |---------|------|---------|
 | `mkdir -p + lock 检查 + 清理` 代码块 | B | `scripts/init_scratch.sh` |
 | `wc -l + awk` 规模判断逻辑 | B | `scripts/compute_workload.sh` |
-| 字体路径、LUFS 目标、像素参数（多 Phase 共用） | C2 | `manifest-schema.json` |
+| 字体路径、LUFS 目标、像素参数（多 Phase 共用） | C | `manifest-schema.json` |
 | 行数阈值推导公式、背景说明 | D | `DESIGN.md §阈值推导` |
 | 架构对比说明（"为何不用 X"） | D | `DESIGN.md §设计决策` |
 | Agent 成员一览表（纯说明） | D | `DESIGN.md §成员说明` |

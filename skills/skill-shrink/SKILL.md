@@ -62,8 +62,9 @@ y → 执行 Step 1–4a（Option A 流程，已分类内容直接使用，无�
 **A 类（保留在 SKILL.md）：协调执行指令**
 - 流程步骤、分支决策逻辑、格式/输出要求、对 Agent/子进程的调用说明
 
-**B 类（→ scripts/）：bash 实现细节**
+**B 类（→ scripts/）：可执行实现细节**
 - 超过 3 行的 bash 代码块，且移出后 SKILL.md 只需单行调用替代
+- **Python 脚本**：含逻辑的 Python 代码块（QA 检查、数据处理、图像操作等），提取为 `scripts/*.py` 后 coordinator 完全不读取，消除整个"指令文本"token 类别。典型判断：Claude 必须理解才能执行 → 留 SKILL.md；`python3 script.py args` 替代整段 → B 类
 
 **C 类（→ manifest-schema.json）：跨 Phase 共享参数**
 → 使用「C vs D 判断决策树」逐项裁定
@@ -200,6 +201,7 @@ done
   □ wc -l SKILL.md ≤ 80
   □ ls agents/ 文件数与 Phase 数一致
   □ grep "manifest" agents/*.md 每个 agent 均有引用
+  □ Reference 归属：每个 reference 文件只被其所属 agent 引用，coordinator 不再直接加载任何 reference
 ```
 
 ---

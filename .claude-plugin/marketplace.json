@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "skill-shrinker",
-      "description": "Shrink bloated Claude Code skill/agent/command files: extracts bash logic to scripts/, moves design notes to DESIGN.md, and compresses SKILL.md to ≤220 lines. Supports three modes: full shrink (>500 lines), proposal (200-500 lines), and reject (<200 lines).",
+      "description": "Shrink bloated Claude Code skill/agent/command files using ABCD four-class extraction: bash/Python logic to scripts/, shared params to manifest-schema.json, design notes to DESIGN.md. Dual-track output: stable (SKILL.md ≤220 lines) or growth (≤80 lines + Phase agents). Three modes: full shrink (>500 lines), proposal (200-500 lines), reject (<200 lines).",
       "category": "workflow",
       "source": {
         "source": "url",

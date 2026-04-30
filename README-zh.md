@@ -134,6 +134,18 @@ my-skill/
 
 ## 更新日志
 
+### v0.3.1 (2026-04-30)
+
+B 类扩展至 Python 脚本 + Option B Reference 归属约束：
+
+| 变更项 | 说明 |
+|--------|------|
+| B 类扩展 | 含逻辑的 Python 代码块提取为 `scripts/*.py`，coordinator 以 `python3 script.py args` 替代 |
+| Reference 归属 | 每个 reference 只被其所属 agent 引用，coordinator 不再直接加载任何 reference |
+| Option B 检查清单 | 新增 `□ Reference 归属` 验收项 |
+
+See [README.md](README.md) for full English release notes.
+
 ### v0.3.0 (2026-04-20)
 
 重大设计升级 — ABCD 四类提取体系 + Option A/B 双轨设计：

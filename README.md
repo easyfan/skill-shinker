@@ -130,6 +130,16 @@ The `evals/evals.json` file contains 5 test cases covering the key decision path
 
 ## Changelog
 
+### v0.3.1 (2026-04-30)
+
+Expanded B-class extraction + Option B reference ownership rule:
+
+| Item | Change |
+|------|--------|
+| B class | Extended to Python scripts: logic-bearing Python blocks extracted to `scripts/*.py`；coordinator replaced with `python3 script.py args` |
+| Reference ownership | Each reference file may only be loaded by its owning agent; coordinator must not directly load references |
+| Checklist | Added `□ Reference ownership` to Option B verification checklist |
+
 ### v0.3.0 (2026-04-20)
 
 Major design revision — ABCD four-class extraction system + dual-track Option A/B:

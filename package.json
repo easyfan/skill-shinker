@@ -1,6 +1,6 @@
 {
   "name": "skill-shrinker",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Shrink bloated Claude Code skill/agent/command files: extract bash to scripts/, design notes to DESIGN.md, compress SKILL.md to ≤220 lines",
   "keywords": [
     "claude-code",
